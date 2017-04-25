@@ -36,33 +36,20 @@ a {
     color: white;
 }
 
-
-
-
 .input {
     width: 30%;
 }
 
-
-
 .group {
     text-align: center;
 }
-
-.inp {
-    
-}
-
-
-
-
 
 .buffer {
     margin-top: 20px;
 }
 
 .buffer-title {
-    margin-top: 14%;
+    margin-top: 10%;
 }
 
 .but {
@@ -148,9 +135,6 @@ a {
     left:0;
 }
 
-
-
-
 .tomato {
     max-height: 70px;
 }
@@ -168,16 +152,30 @@ a {
     height: 232px;
 }
 
-
-
-
-
 .buf1 {
     margin-top: 5%;
 }
 
-
-
 .panel-buffer {
     margin-bottom: 350px;
+}
+
+
+body {
+    padding-bottom: 120px;
+}
+
+
+
+.btn-red {
+    background-color: crimson;
+}
+
+
+
+
+
+.start-button {
+    margin-top: 4px;
+    margin-left: 40%;
 }

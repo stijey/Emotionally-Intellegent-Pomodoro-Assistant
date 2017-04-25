@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"fmt"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -82,6 +83,7 @@ var validPath = regexp.MustCompile("^/(index|edit|save|view)/([a-zA-Z0-9]+)$")
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := validPath.FindStringSubmatch(r.URL.Path)
+		fmt.Println(m)
 		if m == nil {
 			http.NotFound(w, r)
 			return
