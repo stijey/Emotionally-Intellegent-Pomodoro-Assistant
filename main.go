@@ -7,8 +7,12 @@ import (
 	"regexp"
 )
 
-var templates = template.Must(template.ParseFiles("tmpl/edit.html",
-     "tmpl/view.html", "tmpl/index.html"))
+var templates = template.Must(template.ParseFiles(
+	"tmpl/edit.html",
+	"tmpl/view.html",
+	"tmpl/index.html",
+	"tmpl/fragments/login.html",
+	"tmpl/fragments/pomodoro_activity_view.html"))
 
 type Page struct {
 	Title string
@@ -22,7 +26,7 @@ func (p *Page) save() error {
 
 func loadPage(title string) (*Page, error) {
 	filename := title + ".txt"
-	body, err := ioutil.ReadFile("data/"+filename)
+	body, err := ioutil.ReadFile("data/" + filename)
 	if err != nil {
 		return nil, err
 	}
@@ -54,15 +58,16 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/view/"+ p.Title, http.StatusFound)
+	http.Redirect(w, r, "/view/"+p.Title, http.StatusFound)
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p := &Page{Title: title}
-	err := templates.ExecuteTemplate(w, "index.html", p)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+    p := &Page{Title: title}
+
+    err := templates.ExecuteTemplate(w, "index.html", p)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
@@ -85,12 +90,12 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
-
 func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.HandleFunc("/index/", makeHandler(indexHandler))
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+
 	http.ListenAndServe(":8080", nil)
 }
