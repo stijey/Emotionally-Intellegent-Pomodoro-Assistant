@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/the-friyia/go-affect/AuthenticationSystem"
+	_ "github.com/the-friyia/go-affect/Memory"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
-	"github.com/the-friyia/go-affect/AuthenticationSystem"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -18,7 +19,12 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/fragments/signup.html",
 	"tmpl/fragments/pomodoro_activity_view.html"))
 
-var globalSessions, _ = authenticate.NewManager("memory", "gosessionid", 3600)
+var globalSessions *session.Manager
+
+func init() {
+	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
+	go globalSessions.GC()
+}
 
 type Page struct {
 	Title string
@@ -121,12 +127,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func init() {
-    go globalSessions.GC()
-}
-
 func main() {
-
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
