@@ -17,9 +17,13 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/index.html",
 	"tmpl/fragments/login.html",
 	"tmpl/fragments/signup.html",
+	"tmpl/fragments/login_failure.html",
 	"tmpl/fragments/pomodoro_activity_view.html"))
 
 var globalSessions *session.Manager
+
+var username = "Daniel"
+var password = "Password"
 
 func init() {
 	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
@@ -28,6 +32,7 @@ func init() {
 
 type Page struct {
 	Title string
+	Username string
 	Body  []byte
 }
 
@@ -114,7 +119,22 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello World")
 }
 
+func loginHandlerHelper(w http.ResponseWriter, r *http.Request, username string) {
+	p := &Page{}
+
+	if username == "" {
+		p = &Page{Title: "Welcome", Username: ""}
+	} else {
+		p = &Page{Title: "Welcome", Username: username}
+	}
+	err := templates.ExecuteTemplate(w, "index.html", p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+
 	sess := globalSessions.SessionStart(w, r)
 	r.ParseForm()
 	if r.Method == "GET" {
@@ -122,8 +142,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		t.Execute(w, sess.Get("username"))
 	} else {
-		sess.Set("username", r.Form["username"])
-		http.Redirect(w, r, "/", 302)
+		if r.Form["username"][0] == username && r.Form["password"][0] == password {
+			sess.Set(r.Form["username"][0], r.Form["username"])
+			loginHandlerHelper(w, r, r.Form["username"][0])
+			//http.Redirect(w, r, "/", 302)
+		} else {
+			loginHandlerHelper(w, r, "FAILURE")
+		}
 	}
 }
 

@@ -17,7 +17,7 @@
                 </div>
             <ul class="nav navbar-nav">
                 <li><a href="#">About Affect Control Theory</a></li>
-                <li><a href="#">Log In</a></li>
+                <li><a href="fragments/login">Log In</a></li>
             </ul>
             </div>
         </nav>
@@ -28,8 +28,15 @@
                     <h3>Do all the things!!!</h3>
                 </div>
             </div>
-            <!-- {{ template "pomodoro_activity_view"}} -->
-            {{ template "login" }}
+            {{if eq (ne .Username "") (ne .Username "FAILURE")}}
+                {{ template "pomodoro_activity_view"}}
+            {{ end }}
+            {{ if eq .Username ""}}
+                {{ template "login" }}
+            {{ end }}
+            {{ if eq .Username "FAILURE"}}
+                {{ template "login_failure" }}
+            {{ end }}
             <!-- {{template "signup"}} -->
         </div>
         <div class="navbar navbar-default navbar-fixed-bottom">
