@@ -1,15 +1,28 @@
 package affect
 
-// Co-Efficients Fpr Evaluation
+// Co-Efficients For Evaluation
+
+
 
 
 // Co-Efficients For Potency
+
+
 
 
 // Co-Efficients For Activity
 
 
 
+
+
+// AffectiveState - The affective state of an individual throughout an
+//                  interaction
+type AffectiveState struct {
+	FundamentalSentiment [3]float32
+	TransientImpression  [3]float32
+	Deflection           [3]float32
+}
 
 // CalculateDeflection - Required to Calculate Deflection
 func CalculateDeflection(epa1 [3]float32, epa2 [3]float32) float32 {
