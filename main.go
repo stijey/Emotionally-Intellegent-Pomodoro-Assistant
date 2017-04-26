@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"fmt"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -63,12 +63,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request, title string) {
-    p := &Page{Title: title}
+	p := &Page{Title: title}
 
-    err := templates.ExecuteTemplate(w, "index.html", p)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
+	err := templates.ExecuteTemplate(w, "index.html", p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
