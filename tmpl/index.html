@@ -28,7 +28,7 @@
                     <h3>Do all the things!!!</h3>
                 </div>
             </div>
-            {{if eq (ne .Username "") (ne .Username "FAILURE")}}
+            <!-- {{if eq (ne .Username "") (ne .Username "FAILURE")}}
                 {{ template "pomodoro_activity_view"}}
             {{ end }}
             {{ if eq .Username ""}}
@@ -36,7 +36,9 @@
             {{ end }}
             {{ if eq .Username "FAILURE"}}
                 {{ template "login_failure" }}
-            {{ end }}
+            {{ end }} -->
+            {{ template "weekly_goals" }}
+
             <!-- {{template "signup"}} -->
         </div>
         <div class="navbar navbar-default navbar-fixed-bottom">

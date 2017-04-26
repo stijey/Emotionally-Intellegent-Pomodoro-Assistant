@@ -18,6 +18,7 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/fragments/login.html",
 	"tmpl/fragments/signup.html",
 	"tmpl/fragments/login_failure.html",
+	"tmpl/fragments/weekly_goals.html",
 	"tmpl/fragments/pomodoro_activity_view.html"))
 
 var globalSessions *session.Manager
