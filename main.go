@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	// "log"
+	"github.com/the-friyia/go-affect/AuthenticationSystem"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -17,6 +17,8 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/fragments/login.html",
 	"tmpl/fragments/signup.html",
 	"tmpl/fragments/pomodoro_activity_view.html"))
+
+var globalSessions, _ = authenticate.NewManager("memory", "gosessionid", 3600)
 
 type Page struct {
 	Title string
@@ -107,18 +109,24 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Method", r.Method)
+	sess := globalSessions.SessionStart(w, r)
+	r.ParseForm()
 	if r.Method == "GET" {
 		t, _ := template.ParseFiles("index.html")
-		t.Execute(w, nil)
+		w.Header().Set("Content-Type", "text/html")
+		t.Execute(w, sess.Get("username"))
 	} else {
-		r.ParseForm()
-		fmt.Println("username:", r.Form["username"])
-		fmt.Println("password:", r.Form["password"])
+		sess.Set("username", r.Form["username"])
+		http.Redirect(w, r, "/", 302)
 	}
 }
 
+func init() {
+    go globalSessions.GC()
+}
+
 func main() {
+
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
