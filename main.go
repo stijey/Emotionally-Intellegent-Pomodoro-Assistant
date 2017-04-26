@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	// "strings"
+	// "log"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -91,6 +93,8 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		fn(w, r, m[2])
 	}
 }
+
+//func printSomeInfo()
 
 func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))

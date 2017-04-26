@@ -2,23 +2,14 @@ package affect
 
 // Co-Efficients For Evaluation
 
-
-
-
 // Co-Efficients For Potency
 
-
-
-
 // Co-Efficients For Activity
-
-
-
-
 
 // AffectiveState - The affective state of an individual throughout an
 //                  interaction
 type AffectiveState struct {
+	Participant          string
 	FundamentalSentiment [3]float32
 	TransientImpression  [3]float32
 	Deflection           [3]float32
