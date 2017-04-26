@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	// "strings"
+	"strings"
 	// "log"
 )
 
@@ -15,6 +15,7 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/view.html",
 	"tmpl/index.html",
 	"tmpl/fragments/login.html",
+	"tmpl/fragments/signup.html",
 	"tmpl/fragments/pomodoro_activity_view.html"))
 
 type Page struct {
@@ -64,9 +65,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	http.Redirect(w, r, "/view/"+p.Title, http.StatusFound)
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p := &Page{Title: title}
-
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "Welcome"}
 	err := templates.ExecuteTemplate(w, "index.html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -85,7 +85,6 @@ var validPath = regexp.MustCompile("^/(index|edit|save|view)/([a-zA-Z0-9]+)$")
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := validPath.FindStringSubmatch(r.URL.Path)
-		fmt.Println(m)
 		if m == nil {
 			http.NotFound(w, r)
 			return
@@ -94,13 +93,38 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
-//func printSomeInfo()
+func createUser(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fmt.Println(r.Form)
+	fmt.Println("path", r.URL.Path)
+	fmt.Println("scheme", r.URL.Scheme)
+	fmt.Println(r.Form["url_long"])
+	for k, v := range r.Form {
+		fmt.Println("key: ", k)
+		fmt.Println("Value: ", strings.Join(v, ""))
+	}
+	fmt.Fprintf(w, "Hello World")
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Method", r.Method)
+	if r.Method == "GET" {
+		t, _ := template.ParseFiles("index.html")
+		t.Execute(w, nil)
+	} else {
+		r.ParseForm()
+		fmt.Println("username:", r.Form["username"])
+		fmt.Println("password:", r.Form["password"])
+	}
+}
 
 func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
-	http.HandleFunc("/index/", makeHandler(indexHandler))
+	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/signup", createUser)
+	http.HandleFunc("/login", loginHandler)
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 
 	http.ListenAndServe(":8080", nil)
