@@ -161,6 +161,5 @@ func main() {
 	http.HandleFunc("/signup", createUser)
 	http.HandleFunc("/login", loginHandler)
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
-
 	http.ListenAndServe(":8080", nil)
 }
