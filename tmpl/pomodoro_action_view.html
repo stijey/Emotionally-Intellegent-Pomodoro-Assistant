@@ -1,5 +1,66 @@
 {{ template "header" }}
 
-{{ template "pomodoro_activity_view" }}
+<div class="row-fluid above-goal">
+    <div class="col-sm-2"></div>
+    <div class="col-sm-8">
+        <p class="goal-text"><strong>Your current major goal is:</strong>{{ .FirstGoal }}</p>
+    </div>
+</div>
+<div class="buf1"></div>
+<div class="row-fluid">
+    <div class="col-sm-1"></div>
+    {{ range $key, $value := .WeeklyGoals }}
+    <div class="col-sm-2">
+        <div class="panel panel-default">
+          <div class="panel-heading">{{ $key }}</div>
+          <div class="panel-body">
+            <ol>
+            {{ range $value }}
+                <li>{{ .GoalName }}</li>
+            {{ end }}
+            </ol>
+          </div>
+        </div>
+    </div>
+    {{ end }}
+</div>
+<div class="row-fluid panel-buffer"></div>
+<div class="row-fluid buf">
+    <div class="col-sm-6">
+        <div class="panel panel-danger pomo">
+            <div class="panel-heading">Pomodoro Round Info</div>
+            <div class="panel-body">
+                <div>
+                    <img class="tomato" src="../assets/img/tomato.png">
+                    <span class="time-remaining">Time Remaining: 30:00</span>
+                </div>
+                <div class="goal-box">
+                    <ul class="goals">
+                        <li><label for="g1">Goal 1</label><input type="text" class="form-control" id="g1"></li>
+                        <li><label for="g2">Goal 2</label><input type="text" class="form-control" id="g2"></li>
+                        <li><label for="g3">Goal 3</label><input type="text" class="form-control" id="g3"></li>
+                    </ul>
+                </div>
+                <div class="start-button">
+                    <button class="btn btn-primary">Round Start!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div class="panel panel-danger">
+            <div class="panel-heading">Feedback Panel</div>
+            <div class="panel-body goals">
+
+                <form action="">
+                    <p><strong>Did you finish your major goal last round?</strong></p>
+                  <input type="radio" name="gender" value="male"> Yes<br>
+                  <input type="radio" name="gender" value="female"> No<br>
+                </form>
+                <label class="feeling-box">How did you feel about your productivity during that last round?</label><textarea class="form-control form-sizer" rows="8"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
 
 {{ template "footer" }}

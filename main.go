@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -40,6 +41,10 @@ type Page struct {
 	Body     []byte
 	Goal     []string
 	User	 *model.User
+	NumOfGoals int
+	WeeklyGoals map[string][]model.Goal
+	Days	[5]string
+	FirstGoal string
 }
 
 func (p *Page) save() error {
@@ -86,10 +91,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	p := &Page{Title: "Welcome", Goal: nil}
-	err := templates.ExecuteTemplate(w, "index.html", p)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	renderTemplate(w, "index", p)
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
@@ -139,6 +141,35 @@ func loginOrdinary(w http.ResponseWriter, r *http.Request, username string) {
 	}
 }
 
+func loadGoalInformation(usr *model.User) map[string][]model.Goal {
+	days := [5]string{"1.) Monday", "2.) Tuesday", "3.) Wednesday", "4.) Thursday", "5.) Friday"}
+	WeeklyGoals := make(map[string][]model.Goal)
+
+	if len(usr.Goals) > 5 {
+		numOfGoals := len(usr.Goals)
+
+		for day := range days {
+			if numOfGoals >= 2 {
+				WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day], usr.Goals[day+1]}
+				numOfGoals -= 2
+			} else {
+				if numOfGoals >= 0 {
+					WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day]}
+					numOfGoals--
+				} else {
+					WeeklyGoals[days[day]] = []model.Goal{model.Goal{GoalName: ""}}
+				}
+			}
+		}
+
+	} else {
+		for day := range days {
+			WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day]}
+		}
+	}
+	return WeeklyGoals
+}
+
 func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	for _, v := range r.Form {
@@ -147,16 +178,15 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	p := &Page{User: TestUser}
-	err := templates.ExecuteTemplate(w, "pomodoro_action_view.html", p)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	http.Redirect(w, r, "pomodoro_action_view.html", 302)
+	days := [5]string{"1 Monday", "2 Tuesday", "3 Wednesday", "4 Thursday", "5 Friday"}
+	f := loadGoalInformation(TestUser)["1.) Monday"][0]
+	p := &Page{WeeklyGoals: loadGoalInformation(TestUser), Days: days, FirstGoal: f.GoalName}
+
+	renderTemplate(w, "pomodoro_action_view", p)
 }
 
 func loginSetGoals(w http.ResponseWriter, r *http.Request, username string) {
-	p := &Page{}
+	p := &Page{Title: username}
 	err := templates.ExecuteTemplate(w, "initial_goals.html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -192,7 +222,7 @@ func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/signup", createUser)
 	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/setgoals", addGoalsToUser)
+	http.HandleFunc("/pomodoro", addGoalsToUser)
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	http.ListenAndServe(":8080", nil)
 }
