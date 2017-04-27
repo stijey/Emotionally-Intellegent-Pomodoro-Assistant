@@ -5,7 +5,7 @@
 /* change the brand and text color */
 .navbar-custom .navbar-brand,
 .navbar-custom .navbar-text {
-    color: rgba(255,255,255,.8);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* change the link color */
@@ -16,7 +16,7 @@
 /* change the color of active or hovered links */
 .navbar-custom .nav-item.active .nav-link,
 .navbar-custom .nav-item:hover .nav-link {
-    color: #ffffff;
+    color: #ba0000;
 }
 
 /* for dropdown only - change the color of droodown */
@@ -24,12 +24,12 @@
     background-color: crimson;
 }
 .navbar-custom .dropdown-item {
-    color: #ffffff;
+    color: #ba0000;
 }
 .navbar-custom .dropdown-item:hover,
 .navbar-custom .dropdown-item:focus {
     color: #333333;
-    background-color: rgba(255,255,255,.5);
+    background-color: crimson;
 }
 
 a {
@@ -153,29 +153,47 @@ a {
 }
 
 .buf1 {
-    margin-top: 5%;
+    margin-top: 130px;
 }
 
 .panel-buffer {
-    margin-bottom: 350px;
+    margin-bottom: 320px;
 }
-
 
 body {
     padding-bottom: 120px;
 }
 
-
-
 .btn-red {
     background-color: crimson;
 }
 
-
-
-
-
 .start-button {
     margin-top: 4px;
     margin-left: 40%;
+}
+
+.above-goal {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.goal-text {
+    font-size: 150%;
+    font-weight: 100;
+    letter-spacing: 2px;
+}
+
+@media (max-width: 450px) {
+    .buf1 {
+        margin-top: 90px;
+    }
+
+    .panel-buffer {
+        margin-bottom: 100px;
+    }
+}
+
+.feeling-box {
+    margin-top: 7px;
 }

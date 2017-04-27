@@ -2,7 +2,8 @@ package model
 
 type User struct {
 	Goals    []Goal
-	username string
+	Username string
+	Password string
 }
 
 type Goal struct {
