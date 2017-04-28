@@ -9,8 +9,6 @@ package affect
 // AffectiveState - The affective state of an individual throughout an
 //                  interaction
 
-
-
 func Deflection() int {
 	return 1
 }
@@ -22,7 +20,6 @@ func PomodoroTime() int {
 func BreakTime() int {
 	return 8
 }
-
 
 type AffectiveState struct {
 	Participant          string
@@ -41,4 +38,3 @@ func CalculateTransient(a [3]float32, b [3]float32, o [3]float32) [3]float32 {
 
 	return [3]float32{}
 }
-
