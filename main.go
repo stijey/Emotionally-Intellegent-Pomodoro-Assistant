@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"database/sql"
+	_ "github.com/lib/pq"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -29,12 +31,43 @@ var templates = template.Must(template.ParseFiles(
 
 var globalSessions *session.Manager
 
-var TestUser = &model.User{Goals: []model.Goal{},
- 						   Username: "Daniel",
-						   Password: "pass"}
+var TestUser *model.User
 
 var days = [5]string{"1 Monday", "2 Tuesday", "3 Wednesday",
 	 "4 Thursday", "5 Friday"}
+
+ const (
+     DB_USER     = "thefriyia"
+     DB_PASSWORD = ""
+     DB_NAME     = "test"
+ )
+
+func authenticateUser(username string, password string) {
+	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+        DB_USER, DB_PASSWORD, DB_NAME)
+    db, err := sql.Open("postgres", dbinfo)
+    checkErr(err)
+    defer db.Close()
+
+
+	rows, err := db.Query("SELECT * FROM users")
+	for rows.Next() {
+		fmt.Println(rows)
+		var uid int
+		var username string
+		var password string
+		var blob *map[string][]model.Goal
+		err = rows.Scan(&uid, &username, &password, &blob)
+		checkErr(err)
+		TestUser = &model.User{Username: username, Password: password}
+	}
+}
+
+func checkErr(err error) {
+    if err != nil {
+        panic(err)
+    }
+}
 
 func init() {
 	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
@@ -219,6 +252,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		t.Execute(w, sess.Get("username"))
 	} else {
+		authenticateUser(r.Form["username"][0], r.Form["password"][0])
 		if r.Form["username"][0] == TestUser.Username && r.Form["password"][0] == TestUser.Password {
 			sess.Set(r.Form["username"][0], r.Form["username"])
 			if len(TestUser.Goals) == 0 {
@@ -291,3 +325,78 @@ func main() {
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	http.ListenAndServe(":8080", nil)
 }
+
+// package main
+//
+// import (
+//     "database/sql"
+//     "fmt"
+//     _ "github.com/lib/pq"
+//     "time"
+// )
+//
+// const (
+//     DB_USER     = "thefriyia"
+//     DB_PASSWORD = ""
+//     DB_NAME     = "temp"
+// )
+//
+// func main() {
+//     dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+//         DB_USER, DB_PASSWORD, DB_NAME)
+//     db, err := sql.Open("postgres", dbinfo)
+//     checkErr(err)
+//     defer db.Close()
+//
+//     fmt.Println("# Inserting values")
+//
+//     var lastInsertId int
+//     err = db.QueryRow("INSERT INTO userinfo(username,departname,created) VALUES($1,$2,$3) returning uid;", "astaxie", "研发部门", "2012-12-09").Scan(&lastInsertId)
+//     checkErr(err)
+//     fmt.Println("last inserted id =", lastInsertId)
+//
+//     fmt.Println("# Updating")
+//     stmt, err := db.Prepare("update userinfo set username=$1 where uid=$2")
+//     checkErr(err)
+//
+//     res, err := stmt.Exec("astaxieupdate", lastInsertId)
+//     checkErr(err)
+//
+//     affect, err := res.RowsAffected()
+//     checkErr(err)
+//
+//     fmt.Println(affect, "rows changed")
+//
+//     fmt.Println("# Querying")
+//     rows, err := db.Query("SELECT * FROM userinfo")
+//     checkErr(err)
+//
+//     for rows.Next() {
+//         var uid int
+//         var username string
+//         var department string
+//         var created time.Time
+//         err = rows.Scan(&uid, &username, &department, &created)
+//         checkErr(err)
+//         fmt.Println("uid | username | department | created ")
+//         fmt.Printf("%3v | %8v | %6v | %6v\n", uid, username, department, created)
+//     }
+//
+//     fmt.Println("# Deleting")
+//     stmt, err = db.Prepare("delete from userinfo where uid=$1")
+//     checkErr(err)
+//
+//     res, err = stmt.Exec(lastInsertId)
+//     checkErr(err)
+//
+//     affect, err = res.RowsAffected()
+//     checkErr(err)
+//
+//     fmt.Println(affect, "rows changed")
+// }
+//
+// func checkErr(err error) {
+//     if err != nil {
+//         panic(err)
+//     }
+// }
