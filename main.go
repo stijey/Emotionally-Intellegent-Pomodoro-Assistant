@@ -184,7 +184,7 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 
 	f := loadGoalInformation(TestUser)["1.) Monday"][0]
 	p := &Page{WeeklyGoals: loadGoalInformation(TestUser), Days: days, FirstGoal: f.GoalName, NumOfGoals: []int{1, 2, 3}, PomodoroTime: 10, Breaktime: 5}
-
+	setWeeklyGoalsInSession(loadGoalInformation(TestUser))
 	renderTemplate(w, "pomodoro_action_view", p)
 }
 
@@ -218,15 +218,44 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func setWeeklyGoalsInSession(value map[string][]model.Goal) {
+	val := globalSessions.Provider
+	aval, _ := val.SessionRead("username")
+	aval.Set("weekly-goals", value)
+}
+
+func getWeeklyGoalsFromSession() map[string][]model.Goal {
+	val := globalSessions.Provider
+	aval, _ := val.SessionRead("username")
+	return aval.Get("weekly-goals").(map[string][]model.Goal)
+}
+
+func adjustNumberOfGoalsForTheWeek() {
+	temp := getWeeklyGoalsFromSession()
+	firstDayGoals := temp["1.) Monday"]
+	copy(firstDayGoals[0:], firstDayGoals[1:])
+	firstDayGoals[len(firstDayGoals)-1] = model.Goal{}
+	firstDayGoals = firstDayGoals[:len(firstDayGoals)-1]
+	temp["1.) Monday"] = firstDayGoals
+	setWeeklyGoalsInSession(temp)
+}
+
 func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 
-	f := loadGoalInformation(TestUser)["1.) Monday"][0]
 	array := make([]int, affect.Deflection())
 	for i := range array {
 		array[i] = i+1
 	}
 
-	p := &Page{WeeklyGoals: loadGoalInformation(TestUser),
+	r.ParseForm()
+
+	if r.Form.Get("goal-complete") == "true" {
+		adjustNumberOfGoalsForTheWeek()
+	}
+
+	f := getWeeklyGoalsFromSession()["1.) Monday"][0]
+
+	p := &Page{WeeklyGoals: getWeeklyGoalsFromSession(),
 		 	   Days: days,
 			   FirstGoal: f.GoalName,
 			   NumOfGoals: array,

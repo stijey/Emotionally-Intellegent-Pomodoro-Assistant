@@ -11,6 +11,7 @@ package memory
 import (
 	"container/list"
 	"github.com/the-friyia/go-affect/AuthenticationSystem"
+	"github.com/the-friyia/go-affect/Model"
 	"sync"
 	"time"
 )
@@ -21,6 +22,7 @@ type SessionStore struct {
 	sid          string                      // unique session id
 	timeAccessed time.Time                   // last access time
 	value        map[interface{}]interface{} // session value stored inside
+	WeeklyGoals  map[string][]model.Goal
 }
 
 func (st *SessionStore) Set(key, value interface{}) error {

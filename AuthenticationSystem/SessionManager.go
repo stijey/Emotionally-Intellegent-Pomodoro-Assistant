@@ -50,7 +50,7 @@ type Provider interface {
 type Manager struct {
 	cookieName  string
 	lock        sync.Mutex
-	provider    Provider
+	Provider    Provider
 	maxlifetime int64
 }
 
@@ -68,12 +68,12 @@ func (manager *Manager) SessionStart(w http.ResponseWriter, r *http.Request) (se
 	cookie, err := r.Cookie(manager.cookieName)
 	if err != nil || cookie.Value == "" {
 		sid := manager.sessionID()
-		session, _ = manager.provider.SessionInit(sid)
+		session, _ = manager.Provider.SessionInit(sid)
 		cookie := http.Cookie{Name: manager.cookieName, Value: url.QueryEscape(sid), Path: "/", HttpOnly: true, MaxAge: int(manager.maxlifetime)}
 		http.SetCookie(w, &cookie)
 	} else {
 		sid, _ := url.QueryUnescape(cookie.Value)
-		session, _ = manager.provider.SessionRead(sid)
+		session, _ = manager.Provider.SessionRead(sid)
 	}
 	return
 }
@@ -85,7 +85,7 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 	} else {
 		manager.lock.Lock()
 		defer manager.lock.Unlock()
-		manager.provider.SessionDestroy(cookie.Value)
+		manager.Provider.SessionDestroy(cookie.Value)
 		expiration := time.Now()
 		cookie := http.Cookie{Name: manager.cookieName, Path: "/", HttpOnly: true, Expires: expiration, MaxAge: -1}
 		http.SetCookie(w, &cookie)
@@ -95,7 +95,7 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 func (manager *Manager) GC() {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
-	manager.provider.SessionGC(manager.maxlifetime)
+	manager.Provider.SessionGC(manager.maxlifetime)
 	time.AfterFunc(time.Duration(manager.maxlifetime), func() { manager.GC() })
 }
 
@@ -116,5 +116,5 @@ func NewManager(provideName, cookieName string, maxlifetime int64) (*Manager, er
 	if !ok {
 		return nil, fmt.Errorf("session: unknown provide %q (forgotten import?)", provideName)
 	}
-	return &Manager{provider: provider, cookieName: cookieName, maxlifetime: maxlifetime}, nil
+	return &Manager{Provider: provider, cookieName: cookieName, maxlifetime: maxlifetime}, nil
 }
