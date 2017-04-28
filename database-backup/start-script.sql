@@ -18,12 +18,12 @@ DROP TABLE users;
 CREATE DATABASE pomodoro;
 CREATE TABLE users
 (
-    uid smallint NOT NULL,
-    username text NOT NULL,
-    password text NOT NULL,
+    uid SERIAL,
+    username text NOT NULL UNIQUE,
+    password bytea NOT NULL,
     weekly_goals bytea,
     CONSTRAINT users_pkey PRIMARY KEY (uid)
 ) WITH (OIDS=FALSE);
 
-INSERT INTO users (uid, username,password)
-VALUES (1,'dan','pass');
+INSERT INTO users (username,password)
+VALUES ('dan','pass');

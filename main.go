@@ -1,18 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
+	"github.com/the-friyia/go-affect/AffectControlLib"
 	"github.com/the-friyia/go-affect/AuthenticationSystem"
 	_ "github.com/the-friyia/go-affect/Memory"
 	"github.com/the-friyia/go-affect/Model"
-	"github.com/the-friyia/go-affect/AffectControlLib"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"strings"
-	"database/sql"
-	_ "github.com/lib/pq"
+	"crypto/sha256"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -27,30 +27,48 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/fragments/signup.html",
 	"tmpl/fragments/login_failure.html",
 	"tmpl/fragments/weekly_goals.html",
+	"tmpl/create_user.html",
 	"tmpl/fragments/pomodoro_activity_view.html"))
 
 var globalSessions *session.Manager
-
 var TestUser *model.User
-
 var days = [5]string{"1 Monday", "2 Tuesday", "3 Wednesday",
-	 "4 Thursday", "5 Friday"}
+	"4 Thursday", "5 Friday"}
 
- const (
-     DB_USER     = "thefriyia"
-     DB_PASSWORD = ""
-     DB_NAME     = "test"
- )
+const (
+	DB_USER     = "thefriyia"
+	DB_PASSWORD = ""
+	DB_NAME     = "test"
+)
 
-func authenticateUser(username string, password string) {
+type Page struct {
+	Title        string
+	Username     string
+	Body         []byte
+	Goal         []string
+	User         *model.User
+	NumOfGoals   []int
+	WeeklyGoals  map[string][]model.Goal
+	Days         [5]string
+	FirstGoal    string
+	PomodoroTime int
+	Breaktime    int
+}
+
+func init() {
+	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
+	go globalSessions.GC()
+}
+
+func authenticateUser(username string, password string) bool {
 	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-        DB_USER, DB_PASSWORD, DB_NAME)
-    db, err := sql.Open("postgres", dbinfo)
-    checkErr(err)
-    defer db.Close()
+		DB_USER, DB_PASSWORD, DB_NAME)
+	db, err := sql.Open("postgres", dbinfo)
+	checkErr(err)
+	defer db.Close()
 
+	rows, err := db.Query("SELECT * FROM users WHERE username=($1)", username)
 
-	rows, err := db.Query("SELECT * FROM users")
 	for rows.Next() {
 		fmt.Println(rows)
 		var uid int
@@ -59,33 +77,72 @@ func authenticateUser(username string, password string) {
 		var blob *map[string][]model.Goal
 		err = rows.Scan(&uid, &username, &password, &blob)
 		checkErr(err)
-		TestUser = &model.User{Username: username, Password: password}
+		TestUser = &model.User{Username: username, Password: password, WeeklyGoals: blob}
+	}
+	fmt.Println(TestUser.WeeklyGoals)
+
+	if TestUser.Password == hashPassword(password) {
+		return true
+	}
+	return false
+}
+
+func signupHandler(w http.ResponseWriter, r *http.Request) {
+	p := &Page{Title: "Welcome", Goal: nil}
+	renderTemplate(w, "create_user", p)
+}
+
+func prepareUserFormData(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.Form["username"][0]
+	password := r.Form["password"][0]
+	passwordConfirm := r.Form["password-confirm"][0]
+	err := createUser(username, password, passwordConfirm)
+
+	if !err {
+		p := &Page{Title: "Welcome", Goal: nil}
+		renderTemplate(w, "create_user", p)
+	} else {
+		loginSetGoals(w, r, username)
 	}
 }
 
+func hashPassword(password string) string {
+	h := sha256.New()
+	passwordBytes := []byte(password)
+	passwordHashed := h.Sum(passwordBytes)
+	return string(passwordHashed)
+}
+
+func createUser(username string, password string, passwordConfirm string) bool {
+	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+		DB_USER, DB_PASSWORD, DB_NAME)
+	db, err := sql.Open("postgres", dbinfo)
+	checkErr(err)
+	defer db.Close()
+
+	hashedPassword := hashPassword(password)
+	hashedPasswordConfirm := hashPassword(passwordConfirm)
+
+
+	if hashedPassword != hashedPasswordConfirm {
+		return false
+	}
+
+	var lastInsertId int
+	err = db.QueryRow("INSERT INTO users(username,password) VALUES($1,$2) returning uid;", username, hashedPassword).Scan(&lastInsertId)
+
+	if err != nil {
+		return false;
+	}
+	return true;
+}
+
+
 func checkErr(err error) {
-    if err != nil {
-        panic(err)
-    }
-}
-
-func init() {
-	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
-	go globalSessions.GC()
-}
-
-type Page struct {
-	Title    string
-	Username string
-	Body     []byte
-	Goal     []string
-	User	 *model.User
-	NumOfGoals []int
-	WeeklyGoals map[string][]model.Goal
-	Days	[5]string
-	FirstGoal string
-	PomodoroTime int
-	Breaktime int
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (p *Page) save() error {
@@ -135,6 +192,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "index", p)
 }
 
+
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
 	if err != nil {
@@ -155,19 +213,6 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
-func createUser(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Println(r.Form)
-	fmt.Println("path", r.URL.Path)
-	fmt.Println("scheme", r.URL.Scheme)
-	fmt.Println(r.Form["url_long"])
-	for k, v := range r.Form {
-		fmt.Println("key: ", k)
-		fmt.Println("Value: ", strings.Join(v, ""))
-	}
-	fmt.Fprintf(w, "Hello World")
-}
-
 func loginOrdinary(w http.ResponseWriter, r *http.Request, username string) {
 	p := &Page{}
 
@@ -182,7 +227,7 @@ func loginOrdinary(w http.ResponseWriter, r *http.Request, username string) {
 	}
 }
 
-func loadGoalInformation(usr *model.User) map[string][]model.Goal {
+func loadGoalInformation(usr *model.User) *map[string][]model.Goal {
 	days := [5]string{"1.) Monday", "2.) Tuesday",
 		"3.) Wednesday", "4.) Thursday", "5.) Friday"}
 
@@ -190,7 +235,6 @@ func loadGoalInformation(usr *model.User) map[string][]model.Goal {
 
 	if len(usr.Goals) > 5 {
 		numOfGoals := len(usr.Goals)
-
 		for day := range days {
 			if numOfGoals >= 2 {
 				WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day], usr.Goals[day+1]}
@@ -204,13 +248,29 @@ func loadGoalInformation(usr *model.User) map[string][]model.Goal {
 				}
 			}
 		}
-
 	} else {
 		for day := range days {
 			WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day]}
 		}
 	}
-	return WeeklyGoals
+	return &WeeklyGoals
+}
+
+func saveGoals(TestUser *model.User) bool {
+	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+		DB_USER, DB_PASSWORD, DB_NAME)
+	db, err := sql.Open("postgres", dbinfo)
+	checkErr(err)
+	defer db.Close()
+
+	var lastInsertId int
+	err = db.QueryRow("UPDATE users SET weekly_goals=$1 WHERE username=$2 returning uid;", *TestUser.WeeklyGoals, TestUser.Username).Scan(&lastInsertId)
+	fmt.Println(err)
+	if err.Error() != "" {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
@@ -221,17 +281,18 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	f := (*loadGoalInformation(TestUser))["1.) Monday"][0]
 
-	f := loadGoalInformation(TestUser)["1.) Monday"][0]
+	p := &Page{WeeklyGoals: (*loadGoalInformation(TestUser)),
+		Days:         days,
+		FirstGoal:    f.GoalName,
+		NumOfGoals:   []int{1, 2, 3},
+		PomodoroTime: 10,
+		Breaktime:    5}
 
-	p := &Page{WeeklyGoals: loadGoalInformation(TestUser),
-			   Days: days,
-			   FirstGoal: f.GoalName,
-			   NumOfGoals: []int{1, 2, 3},
-			   PomodoroTime: 10,
-			   Breaktime: 5}
-
-	setWeeklyGoalsInSession(loadGoalInformation(TestUser))
+	TestUser.WeeklyGoals = loadGoalInformation(TestUser)
+	saveGoals(TestUser)
+	setWeeklyGoalsInSession(*TestUser.WeeklyGoals)
 	renderTemplate(w, "pomodoro_action_view", p)
 }
 
@@ -252,8 +313,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		t.Execute(w, sess.Get("username"))
 	} else {
-		authenticateUser(r.Form["username"][0], r.Form["password"][0])
-		if r.Form["username"][0] == TestUser.Username && r.Form["password"][0] == TestUser.Password {
+		if authenticateUser(r.Form["username"][0], r.Form["password"][0]) {
 			sess.Set(r.Form["username"][0], r.Form["username"])
 			if len(TestUser.Goals) == 0 {
 				loginSetGoals(w, r, r.Form["username"][0])
@@ -292,7 +352,7 @@ func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 
 	array := make([]int, affect.Deflection())
 	for i := range array {
-		array[i] = i+1
+		array[i] = i + 1
 	}
 
 	r.ParseForm()
@@ -304,11 +364,11 @@ func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 	f := getWeeklyGoalsFromSession()["1.) Monday"][0]
 
 	p := &Page{WeeklyGoals: getWeeklyGoalsFromSession(),
-		 	   Days: days,
-			   FirstGoal: f.GoalName,
-			   NumOfGoals: array,
-			   PomodoroTime: affect.PomodoroTime(),
-		   	   Breaktime: affect.BreakTime()}
+		Days:         days,
+		FirstGoal:    f.GoalName,
+		NumOfGoals:   array,
+		PomodoroTime: affect.PomodoroTime(),
+		Breaktime:    affect.BreakTime()}
 
 	renderTemplate(w, "pomodoro_action_view", p)
 }
@@ -318,7 +378,9 @@ func main() {
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/signup", createUser)
+	http.HandleFunc("/createaccount", signupHandler)
+	// http.HandleFunc("/signup", createUser)
+	http.HandleFunc("/signup", prepareUserFormData)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/pomodoro", addGoalsToUser)
 	http.HandleFunc("/pomodoro-update", pomodoroUpdate)

@@ -4,6 +4,7 @@ type User struct {
 	Goals    []Goal
 	Username string
 	Password string
+	WeeklyGoals *map[string][]Goal
 }
 
 type Goal struct {

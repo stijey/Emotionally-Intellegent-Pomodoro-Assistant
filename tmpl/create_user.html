@@ -1,0 +1,44 @@
+{{ template "header" }}
+
+<form action="/signup" method="post">
+    <div class="row buffer-title">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-6">
+            <label>Name:</label>
+            <input type="text" class="form-control" name="username">
+        </div>
+    </div>
+
+    <div class="row buffer">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-6">
+            <label for="usr">Email:</label>
+            <input type="text" class="form-control" name="email">
+        </div>
+    </div>
+
+    <div class="row buffer">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-6">
+            <label for="usr">Password:</label>
+            <input type="password" class="form-control" name="password">
+        </div>
+    </div>
+
+    <div class="row buffer">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-6">
+            <label for="usr">Confirm Password:</label>
+            <input type="password" class="form-control" name="password-confirm">
+        </div>
+    </div>
+
+    <div class="row buffer">
+        <div class="col-sm-4"></div>
+        <div class="col-sm-4 but">
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+        </div>
+    </div>
+</form>
+
+{{ template "footer" }}
