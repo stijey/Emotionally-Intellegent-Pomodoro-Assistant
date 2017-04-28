@@ -1,5 +1,9 @@
 # Affect Control Theory Pomodoro App
 
+## A Productivity tool built on Affective Computing
+
+Affective Computing is a subset of Artificial intelligence that deals with human emotion and computers. This application uses human emotional input to adjust the length of time a user spends working, taking breaks and the amount of work a user tries to accomplish in a period of time. This application based on the principles of the Pomodoro method of Productivity.
+
 ## Disclaimer
 
 All of the Affective Computing datasets in this application including behaviors, identities and coefficients are the copyrighted property of David R. Heise, Indiana University, Bloomington, Indiana. His website's materials including the datasets in this application are provided for noncommercial, research use only. In the case of governmental, political, or commercial applications, you may not use, reuse, distribute, re-post, duplicate, offer for sale, or modify the content of Heise's sites, whether data, text, images, audio, or video, without David R. Heise's written permission.
@@ -9,7 +13,6 @@ I am able to use these datasets to create an alternate implementation of Affect 
 For the full terms and conditions see this link:
 
 http://www.indiana.edu/~socpsy/ACT/legal.htm
-
 
 ## The Book on affect control theory is:
 

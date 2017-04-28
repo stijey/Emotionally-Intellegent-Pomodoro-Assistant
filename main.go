@@ -28,8 +28,13 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/fragments/pomodoro_activity_view.html"))
 
 var globalSessions *session.Manager
-var TestUser = &model.User{Goals: []model.Goal{}, Username: "Daniel", Password: "pass"}
-var days = [5]string{"1 Monday", "2 Tuesday", "3 Wednesday", "4 Thursday", "5 Friday"}
+
+var TestUser = &model.User{Goals: []model.Goal{},
+ 						   Username: "Daniel",
+						   Password: "pass"}
+
+var days = [5]string{"1 Monday", "2 Tuesday", "3 Wednesday",
+	 "4 Thursday", "5 Friday"}
 
 func init() {
 	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
@@ -145,7 +150,9 @@ func loginOrdinary(w http.ResponseWriter, r *http.Request, username string) {
 }
 
 func loadGoalInformation(usr *model.User) map[string][]model.Goal {
-	days := [5]string{"1.) Monday", "2.) Tuesday", "3.) Wednesday", "4.) Thursday", "5.) Friday"}
+	days := [5]string{"1.) Monday", "2.) Tuesday",
+		"3.) Wednesday", "4.) Thursday", "5.) Friday"}
+
 	WeeklyGoals := make(map[string][]model.Goal)
 
 	if len(usr.Goals) > 5 {
@@ -183,7 +190,14 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 
 
 	f := loadGoalInformation(TestUser)["1.) Monday"][0]
-	p := &Page{WeeklyGoals: loadGoalInformation(TestUser), Days: days, FirstGoal: f.GoalName, NumOfGoals: []int{1, 2, 3}, PomodoroTime: 10, Breaktime: 5}
+
+	p := &Page{WeeklyGoals: loadGoalInformation(TestUser),
+			   Days: days,
+			   FirstGoal: f.GoalName,
+			   NumOfGoals: []int{1, 2, 3},
+			   PomodoroTime: 10,
+			   Breaktime: 5}
+
 	setWeeklyGoalsInSession(loadGoalInformation(TestUser))
 	renderTemplate(w, "pomodoro_action_view", p)
 }
