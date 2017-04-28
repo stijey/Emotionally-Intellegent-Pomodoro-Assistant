@@ -5,12 +5,12 @@ import (
 	"github.com/the-friyia/go-affect/AuthenticationSystem"
 	_ "github.com/the-friyia/go-affect/Memory"
 	"github.com/the-friyia/go-affect/Model"
+	"github.com/the-friyia/go-affect/AffectControlLib"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
-
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -29,6 +29,7 @@ var templates = template.Must(template.ParseFiles(
 
 var globalSessions *session.Manager
 var TestUser = &model.User{Goals: []model.Goal{}, Username: "Daniel", Password: "pass"}
+var days = [5]string{"1 Monday", "2 Tuesday", "3 Wednesday", "4 Thursday", "5 Friday"}
 
 func init() {
 	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
@@ -41,10 +42,12 @@ type Page struct {
 	Body     []byte
 	Goal     []string
 	User	 *model.User
-	NumOfGoals int
+	NumOfGoals []int
 	WeeklyGoals map[string][]model.Goal
 	Days	[5]string
 	FirstGoal string
+	PomodoroTime int
+	Breaktime int
 }
 
 func (p *Page) save() error {
@@ -178,9 +181,9 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	days := [5]string{"1 Monday", "2 Tuesday", "3 Wednesday", "4 Thursday", "5 Friday"}
+
 	f := loadGoalInformation(TestUser)["1.) Monday"][0]
-	p := &Page{WeeklyGoals: loadGoalInformation(TestUser), Days: days, FirstGoal: f.GoalName}
+	p := &Page{WeeklyGoals: loadGoalInformation(TestUser), Days: days, FirstGoal: f.GoalName, NumOfGoals: []int{1, 2, 3}, PomodoroTime: 10, Breaktime: 5}
 
 	renderTemplate(w, "pomodoro_action_view", p)
 }
@@ -215,6 +218,24 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
+
+	f := loadGoalInformation(TestUser)["1.) Monday"][0]
+	array := make([]int, affect.Deflection())
+	for i := range array {
+		array[i] = i+1
+	}
+
+	p := &Page{WeeklyGoals: loadGoalInformation(TestUser),
+		 	   Days: days,
+			   FirstGoal: f.GoalName,
+			   NumOfGoals: array,
+			   PomodoroTime: affect.PomodoroTime(),
+		   	   Breaktime: affect.BreakTime()}
+
+	renderTemplate(w, "pomodoro_action_view", p)
+}
+
 func main() {
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
@@ -223,6 +244,7 @@ func main() {
 	http.HandleFunc("/signup", createUser)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/pomodoro", addGoalsToUser)
+	http.HandleFunc("/pomodoro-update", pomodoroUpdate)
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	http.ListenAndServe(":8080", nil)
 }

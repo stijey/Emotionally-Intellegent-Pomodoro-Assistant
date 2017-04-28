@@ -32,35 +32,77 @@
             <div class="panel-body">
                 <div>
                     <img class="tomato" src="../assets/img/tomato.png">
-                    <span class="time-remaining">Time Remaining: 30:00</span>
+                    <span class="time-remaining">Time Remaining: <span class="time">{{ .PomodoroTime }}:00</span></span>
                 </div>
                 <div class="goal-box">
                     <ul class="goals">
-                        <li><label for="g1">Goal 1</label><input type="text" class="form-control" id="g1"></li>
-                        <li><label for="g2">Goal 2</label><input type="text" class="form-control" id="g2"></li>
-                        <li><label for="g3">Goal 3</label><input type="text" class="form-control" id="g3"></li>
+                        {{ range .NumOfGoals }}
+                            <li class="goal"><label>Goal {{.}} </label><input type="text" class="form-control" id="g{{.}}"></li>
+                        {{ end }}
                     </ul>
                 </div>
                 <div class="start-button">
-                    <button class="btn btn-primary">Round Start!</button>
+                    <button class="btn btn-primary run-button" onclick="countdown()">Round Start!</button>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-sm-6">
-        <div class="panel panel-danger">
+        <div class="panel panel-danger feed">
             <div class="panel-heading">Feedback Panel</div>
             <div class="panel-body goals">
-
-                <form action="">
+                <form action="/pomodoro-update">
                     <p><strong>Did you finish your major goal last round?</strong></p>
-                  <input type="radio" name="gender" value="male"> Yes<br>
-                  <input type="radio" name="gender" value="female"> No<br>
+                    <input type="radio" name="gender" value="male"> Yes<br>
+                    <input type="radio" name="gender" value="female"> No<br>
+                    <label class="feeling-box">How did you feel about your productivity during that last round?</label>
+                    <textarea class="form-control form-sizer" rows="8"></textarea>
+                    <button class="btn btn-primary start-button">Submit Feedback</button>
                 </form>
-                <label class="feeling-box">How did you feel about your productivity during that last round?</label><textarea class="form-control form-sizer" rows="8"></textarea>
             </div>
         </div>
     </div>
 </div>
+<div style="display: none" id="breaktime">{{.Breaktime}}</div>
+<script>
+var isBreak = true;
+
+
+function countdown() {
+
+    $(document).ready(function() {
+
+        var counter;
+        var count = 1;
+
+        var doUpdate = function() {
+            $('.time').each(function() {
+              count = parseInt($(this).html());
+              if (count !== 0) {
+                $(".run-button").hide();
+                $(this).html((count - 1) + ":00");
+              } else {
+                 clearInterval(id);
+                 $(this).html("{{.Breaktime}}:00");
+                 $(".run-button").show();
+                 if(isBreak) {
+                    $(".run-button").html("Break Time!");
+                    $(".goal").hide();
+                    isBreak = false;
+                    alert("Break Time! Enter in your Feedback on the next round so we can improve your productivity")
+                 } else {
+                     $('.pomo').hide();
+                     alert("Please submit your feedback to move on to the next round")
+                    // $(".run-button").html("Round Start!");
+                    // $(".goal").show();
+                    isBreak = true;
+                }
+              }
+            });
+        };
+        var id = setInterval(doUpdate, 1000);
+    });
+}
+</script>
 
 {{ template "footer" }}
