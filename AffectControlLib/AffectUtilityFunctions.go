@@ -15,18 +15,18 @@ type AffectiveState struct {
 	Behaviours           map[string][3]float64
 }
 
-func MakeAffectiveState() AffectiveState{
+func MakeAffectiveState() AffectiveState {
 	actor := LoadIdentities("student")
 	object := LoadIdentities("secretary")
 	behaviours := LoadBehaviours()
 
 	a := AffectiveState{Actor: actor,
-						Behaviour: [3]float64{1, 1, 1},
-						Object: object,
-						FundamentalSentiment: [3]float64{1, 1, 1},
-						TransientImpression: [3]float64{1, 1, 1},
-						Deflection: 0,
-						Behaviours: behaviours}
+		Behaviour:            [3]float64{1, 1, 1},
+		Object:               object,
+		FundamentalSentiment: [3]float64{1, 1, 1},
+		TransientImpression:  [3]float64{1, 1, 1},
+		Deflection:           0,
+		Behaviours:           behaviours}
 
 	return a
 }
@@ -35,16 +35,29 @@ func (a *AffectiveState) PropegateForward(behaviour [3]float64) {
 	// Re-calculate the values
 	a.TransientImpression = CalculateTransient(a.Actor, behaviour, a.Object)
 	a.Deflection = CalculateDeflection(a.TransientImpression, a.Actor,
-		 behaviour, a.Behaviour, a.Object, a.Object)
+		behaviour, a.Behaviour, a.Object, a.Object)
 	a.FundamentalSentiment = CalculateTransient(a.Actor, behaviour, a.Object)
 
 	//Switch the users for the next turn
 	temp := a.Actor
 	a.Actor = a.Object
 	a.Object = temp
+
 }
 
-func CalculateTransient(actor [3]float64, behaviour [3]float64, object [3]float64) [3]float64 {
+func (a *AffectiveState) Respond() {
+	if a.Deflection > 21 {
+		a.PropegateForward(a.Behaviours["compliment"])
+	} else if a.Deflection > 10 {
+		a.PropegateForward(a.Behaviours["counsel"])
+	} else {
+		a.PropegateForward(a.Behaviours["pursue"])
+	}
+}
+
+func CalculateTransient(actor [3]float64, behaviour [3]float64,
+	object [3]float64) [3]float64 {
+
 	oldActorE := actor[0]
 	oldActorP := actor[1]
 	oldActorA := actor[2]
@@ -102,7 +115,10 @@ func CalculateTransient(actor [3]float64, behaviour [3]float64, object [3]float6
 	return [3]float64{newE, newP, newA}
 }
 
-func CalculateDeflection(actor [3]float64, oldActor [3]float64, oldBehaviour [3]float64, behaviour [3]float64, oldObject [3]float64, object [3]float64) float64 {
+func CalculateDeflection(actor [3]float64, oldActor [3]float64,
+	oldBehaviour [3]float64, behaviour [3]float64,
+	oldObject [3]float64, object [3]float64) float64 {
+
 	deflection := math.Pow(actor[0]-oldActor[0], 2) +
 		math.Pow(actor[1]-oldActor[1], 2) +
 		math.Pow(actor[2]-oldActor[2], 2) +
@@ -118,7 +134,7 @@ func CalculateDeflection(actor [3]float64, oldActor [3]float64, oldBehaviour [3]
 
 func LoadIdentities(ident string) [3]float64 {
 	beh := make(map[string][3]float64)
-	b, _ := ioutil.ReadFile("../affect-data/identities.dat")
+	b, _ := ioutil.ReadFile("AffectControlLib/affect-data/identities.dat")
 	str := string(b)
 	buffer := []string(strings.Fields(str))
 
@@ -132,9 +148,9 @@ func LoadIdentities(ident string) [3]float64 {
 	return beh[ident]
 }
 
-func LoadBehaviours() map[string][3]float64{
+func LoadBehaviours() map[string][3]float64 {
 	beh := make(map[string][3]float64)
-	b, _ := ioutil.ReadFile("../affect-data/behaviours.dat")
+	b, _ := ioutil.ReadFile("AffectControlLib/affect-data/behaviours.dat")
 	str := string(b)
 	buffer := []string(strings.Fields(str))
 

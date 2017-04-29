@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
@@ -12,7 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"crypto/sha256"
+	"strings"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -34,6 +35,8 @@ var globalSessions *session.Manager
 var TestUser *model.User
 var days = [5]string{"1 Monday", "2 Tuesday", "3 Wednesday",
 	"4 Thursday", "5 Friday"}
+
+var affectiveState affect.AffectiveState
 
 const (
 	DB_USER     = "thefriyia"
@@ -57,6 +60,7 @@ type Page struct {
 
 func init() {
 	globalSessions, _ = session.NewManager("memory", "gosessionid", 3600)
+	affectiveState = affect.MakeAffectiveState()
 	go globalSessions.GC()
 }
 
@@ -70,16 +74,17 @@ func authenticateUser(username string, password string) bool {
 	rows, err := db.Query("SELECT * FROM users WHERE username=($1)", username)
 
 	for rows.Next() {
-		fmt.Println(rows)
+		// fmt.Println(rows)
 		var uid int
 		var username string
 		var password string
 		var blob *map[string][]model.Goal
 		err = rows.Scan(&uid, &username, &password, &blob)
 		checkErr(err)
-		TestUser = &model.User{Username: username, Password: password, WeeklyGoals: blob}
+		TestUser = &model.User{Username: username,
+			Password:    password,
+			WeeklyGoals: blob}
 	}
-	fmt.Println(TestUser.WeeklyGoals)
 
 	if TestUser.Password == hashPassword(password) {
 		return true
@@ -124,20 +129,20 @@ func createUser(username string, password string, passwordConfirm string) bool {
 	hashedPassword := hashPassword(password)
 	hashedPasswordConfirm := hashPassword(passwordConfirm)
 
-
 	if hashedPassword != hashedPasswordConfirm {
 		return false
 	}
 
 	var lastInsertId int
-	err = db.QueryRow("INSERT INTO users(username,password) VALUES($1,$2) returning uid;", username, hashedPassword).Scan(&lastInsertId)
+
+	err = db.QueryRow("INSERT INTO users(username,password) VALUES($1,$2) re"+
+		"turning uid;", username, hashedPassword).Scan(&lastInsertId)
 
 	if err != nil {
-		return false;
+		return false
 	}
-	return true;
+	return true
 }
-
 
 func checkErr(err error) {
 	if err != nil {
@@ -159,39 +164,10 @@ func loadPage(title string) (*Page, error) {
 	return &Page{Title: title, Body: body}, nil
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
-	if err != nil {
-		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
-		return
-	}
-	renderTemplate(w, "view", p)
-}
-
-func editHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
-	if err != nil {
-		p = &Page{Title: title}
-	}
-	renderTemplate(w, "edit", p)
-}
-
-func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
-	body := r.FormValue("body")
-	p := &Page{Title: title, Body: []byte(body)}
-	err := p.save()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/view/"+p.Title, http.StatusFound)
-}
-
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	p := &Page{Title: "Welcome", Goal: nil}
 	renderTemplate(w, "index", p)
 }
-
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
@@ -202,7 +178,9 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 
 var validPath = regexp.MustCompile("^/(index|edit|save|view)/([a-zA-Z0-9]+)$")
 
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+func makeHandler(fn func(http.ResponseWriter,
+	*http.Request, string)) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := validPath.FindStringSubmatch(r.URL.Path)
 		if m == nil {
@@ -237,14 +215,16 @@ func loadGoalInformation(usr *model.User) *map[string][]model.Goal {
 		numOfGoals := len(usr.Goals)
 		for day := range days {
 			if numOfGoals >= 2 {
-				WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day], usr.Goals[day+1]}
+				WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day],
+					usr.Goals[day+1]}
 				numOfGoals -= 2
 			} else {
 				if numOfGoals >= 0 {
 					WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day]}
 					numOfGoals--
 				} else {
-					WeeklyGoals[days[day]] = []model.Goal{model.Goal{GoalName: ""}}
+					WeeklyGoals[days[day]] =
+						[]model.Goal{model.Goal{GoalName: ""}}
 				}
 			}
 		}
@@ -264,12 +244,15 @@ func saveGoals(TestUser *model.User) bool {
 	defer db.Close()
 
 	var lastInsertId int
-	err = db.QueryRow("UPDATE users SET weekly_goals=$1 WHERE username=$2 returning uid;", *TestUser.WeeklyGoals, TestUser.Username).Scan(&lastInsertId)
+	err = db.QueryRow("UPDATE users SET weekly_goals=$1 WHERE username=$2 re"+
+		"turning uid;", *TestUser.WeeklyGoals, TestUser.Username).
+		Scan(&lastInsertId)
+
 	fmt.Println(err)
 	if err.Error() != "" {
-		return true;
+		return true
 	} else {
-		return false;
+		return false
 	}
 }
 
@@ -286,8 +269,6 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g8"][0]})
 	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g9"][0]})
 	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g10"][0]})
-
-	fmt.Println(TestUser.Goals)
 
 	f := (*loadGoalInformation(TestUser))["1.) Monday"][0]
 
@@ -356,14 +337,68 @@ func adjustNumberOfGoalsForTheWeek() {
 	setWeeklyGoalsInSession(temp)
 }
 
+func userInputToEPA(userInput string) [3]float64 {
+
+	words := strings.Fields(userInput)
+	allKeyWords := affectiveState.Behaviours
+	kw := []string{}
+	for i := range words {
+		for k, _ := range allKeyWords {
+			if words[i] == k {
+				kw = append(kw, words[i])
+				break
+			}
+		}
+	}
+
+	returnVal := [3]float64{0.0, 0.0, 0.0}
+	for word := range kw {
+		returnVal[0] = affectiveState.Behaviours[kw[word]][0]
+		returnVal[1] = affectiveState.Behaviours[kw[word]][1]
+		returnVal[2] = affectiveState.Behaviours[kw[word]][2]
+	}
+
+	totalKeyWords := len(kw)
+
+	returnVal[0] /= float64(totalKeyWords)
+	returnVal[1] /= float64(totalKeyWords)
+	returnVal[2] /= float64(totalKeyWords)
+
+	return returnVal
+}
+
+func calculateRoundPerameters(userInput string) (goals int, breaks int, workTime int) {
+
+	affectiveState.PropegateForward(userInputToEPA(userInput))
+
+	if affectiveState.Deflection > 21 {
+		goals = 1
+		breaks = 20
+		workTime = 40
+	} else if affectiveState.Deflection > 10 {
+		goals = 2
+		breaks = 15
+		workTime = 30
+	} else {
+		goals = 3
+		breaks = 10
+		workTime = 20
+	}
+	affectiveState.Respond()
+
+	return goals, breaks, workTime
+}
+
 func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 
-	array := make([]int, affect.Deflection())
+	r.ParseForm()
+
+	goals, breakTime, workTime := calculateRoundPerameters(r.Form["feedback-text"][0])
+
+	array := make([]int, goals)
 	for i := range array {
 		array[i] = i + 1
 	}
-
-	r.ParseForm()
 
 	if r.Form.Get("goal-complete") == "true" {
 		adjustNumberOfGoalsForTheWeek()
@@ -375,16 +410,13 @@ func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 		Days:         days,
 		FirstGoal:    f.GoalName,
 		NumOfGoals:   array,
-		PomodoroTime: affect.PomodoroTime(),
-		Breaktime:    affect.BreakTime()}
+		PomodoroTime: breakTime,
+		Breaktime:    workTime}
 
 	renderTemplate(w, "pomodoro_action_view", p)
 }
 
 func main() {
-	http.HandleFunc("/view/", makeHandler(viewHandler))
-	http.HandleFunc("/edit/", makeHandler(editHandler))
-	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/createaccount", signupHandler)
 	// http.HandleFunc("/signup", createUser)
