@@ -204,7 +204,9 @@ func saveGoals(TestUser *model.User) bool {
 	}
 }
 
-func delegateGoals(goals []model.Goal, w http.ResponseWriter, r *http.Request) *map[string][]model.Goal {
+func delegateGoals(goals []model.Goal, w http.ResponseWriter,
+	r *http.Request) *map[string][]model.Goal {
+
 	days := [5]string{"1.) Monday", "2.) Tuesday",
 		"3.) Wednesday", "4.) Thursday", "5.) Friday"}
 
@@ -212,7 +214,10 @@ func delegateGoals(goals []model.Goal, w http.ResponseWriter, r *http.Request) *
 
 	if goals[0].GoalName == "" {
 		renderTemplate(w, "pomodoro_action_view", &Page{})
-	} else if goals[1].GoalName == "" || goals[2].GoalName == "" || goals[3].GoalName == "" || goals[4].GoalName == "" || goals[5].GoalName == ""{
+	} else if goals[1].GoalName == "" || goals[2].GoalName == "" ||
+		goals[3].GoalName == "" || goals[4].GoalName == "" ||
+		goals[5].GoalName == "" {
+
 		for i := 0; i < 5; i++ {
 			WeeklyGoals[days[i]] = []model.Goal{goals[i]}
 		}
@@ -333,7 +338,7 @@ func adjustNumberOfGoalsForTheWeek(w http.ResponseWriter, r *http.Request) {
 
 	for i := len(newArr); i < 10; i++ {
 		newArr = append(newArr, model.Goal{GoalName: "",
-			 											   Priority: 999})
+			Priority: 999})
 	}
 
 	sort.Sort(newArr)
@@ -342,7 +347,7 @@ func adjustNumberOfGoalsForTheWeek(w http.ResponseWriter, r *http.Request) {
 		newArr[i] = newArr[i+1]
 	}
 
-	newArr[len(newArr)-1] = model.Goal{GoalName: "",Priority: 999}
+	newArr[len(newArr)-1] = model.Goal{GoalName: "", Priority: 999}
 	sort.Sort(newArr)
 	setWeeklyGoalsInSession(*delegateGoals(newArr, w, r))
 }
