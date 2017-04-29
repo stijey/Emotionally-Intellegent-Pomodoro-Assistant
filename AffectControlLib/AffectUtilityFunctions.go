@@ -163,15 +163,3 @@ func LoadBehaviours() map[string][3]float64 {
 	}
 	return beh
 }
-
-func Deflection() int {
-	return 3
-}
-
-func PomodoroTime() int {
-	return 8
-}
-
-func BreakTime() int {
-	return 2
-}
