@@ -233,7 +233,7 @@ func loadGoalInformation(usr *model.User) *map[string][]model.Goal {
 
 	WeeklyGoals := make(map[string][]model.Goal)
 
-	if len(usr.Goals) > 5 {
+	if usr.Goals[5].GoalName != "" {
 		numOfGoals := len(usr.Goals)
 		for day := range days {
 			if numOfGoals >= 2 {
@@ -275,11 +275,19 @@ func saveGoals(TestUser *model.User) bool {
 
 func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	for _, v := range r.Form {
-		if v[0] != "" {
-			TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: v[0], Priority: 0})
-		}
-	}
+
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g1"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g2"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g3"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g4"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g5"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g6"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g7"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g8"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g9"][0]})
+	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g10"][0]})
+
+	fmt.Println(TestUser.Goals)
 
 	f := (*loadGoalInformation(TestUser))["1.) Monday"][0]
 
