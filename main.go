@@ -12,6 +12,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"sort"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -203,51 +204,52 @@ func saveGoals(TestUser *model.User) bool {
 	}
 }
 
-
-
-func loadGoalInformation(usr *model.User) *map[string][]model.Goal {
+func delegateGoals(goals []model.Goal, w http.ResponseWriter, r *http.Request) *map[string][]model.Goal {
 	days := [5]string{"1.) Monday", "2.) Tuesday",
 		"3.) Wednesday", "4.) Thursday", "5.) Friday"}
 
 	WeeklyGoals := make(map[string][]model.Goal)
 
-	if usr.Goals[6].GoalName == "" {
-		WeeklyGoals[days[0]] = []model.Goal{usr.Goals[0], usr.Goals[1]}
+	if goals[0].GoalName == "" {
+		renderTemplate(w, "pomodoro_action_view", &Page{})
+	} else if goals[1].GoalName == "" || goals[2].GoalName == "" || goals[3].GoalName == "" || goals[4].GoalName == "" || goals[5].GoalName == ""{
+		for i := 0; i < 5; i++ {
+			WeeklyGoals[days[i]] = []model.Goal{goals[i]}
+		}
+	} else if goals[6].GoalName == "" {
+		WeeklyGoals[days[0]] = []model.Goal{goals[0], goals[1]}
 		for i := 1; i < 5; i++ {
-			WeeklyGoals[days[i]] = []model.Goal{usr.Goals[i+1]}
+			WeeklyGoals[days[i]] = []model.Goal{goals[i+1]}
 		}
-	} else if usr.Goals[7].GoalName == "" {
-		WeeklyGoals[days[0]] = []model.Goal{usr.Goals[0], usr.Goals[1]}
-		WeeklyGoals[days[1]] = []model.Goal{usr.Goals[2], usr.Goals[3]}
+	} else if goals[7].GoalName == "" {
+		WeeklyGoals[days[0]] = []model.Goal{goals[0], goals[1]}
+		WeeklyGoals[days[1]] = []model.Goal{goals[2], goals[3]}
 		for i := 2; i < 5; i++ {
-			WeeklyGoals[days[i]] = []model.Goal{usr.Goals[i+2]}
+			WeeklyGoals[days[i]] = []model.Goal{goals[i+2]}
 		}
-	} else if usr.Goals[8].GoalName == "" {
-		WeeklyGoals[days[0]] = []model.Goal{usr.Goals[0], usr.Goals[1]}
-		WeeklyGoals[days[1]] = []model.Goal{usr.Goals[2], usr.Goals[3]}
-		WeeklyGoals[days[2]] = []model.Goal{usr.Goals[4], usr.Goals[5]}
+	} else if goals[8].GoalName == "" {
+		WeeklyGoals[days[0]] = []model.Goal{goals[0], goals[1]}
+		WeeklyGoals[days[1]] = []model.Goal{goals[2], goals[3]}
+		WeeklyGoals[days[2]] = []model.Goal{goals[4], goals[5]}
 		for i := 3; i < 5; i++ {
-			WeeklyGoals[days[i]] = []model.Goal{usr.Goals[i+3]}
+			WeeklyGoals[days[i]] = []model.Goal{goals[i+3]}
 		}
-	} else if usr.Goals[9].GoalName == "" {
-		WeeklyGoals[days[0]] = []model.Goal{usr.Goals[0], usr.Goals[1]}
-		WeeklyGoals[days[1]] = []model.Goal{usr.Goals[2], usr.Goals[3]}
-		WeeklyGoals[days[2]] = []model.Goal{usr.Goals[4], usr.Goals[5]}
-		WeeklyGoals[days[3]] = []model.Goal{usr.Goals[6], usr.Goals[7]}
+	} else if goals[9].GoalName == "" {
+		WeeklyGoals[days[0]] = []model.Goal{goals[0], goals[1]}
+		WeeklyGoals[days[1]] = []model.Goal{goals[2], goals[3]}
+		WeeklyGoals[days[2]] = []model.Goal{goals[4], goals[5]}
+		WeeklyGoals[days[3]] = []model.Goal{goals[6], goals[7]}
 		for i := 4; i < 5; i++ {
-			WeeklyGoals[days[i]] = []model.Goal{usr.Goals[i+4]}
+			WeeklyGoals[days[i]] = []model.Goal{goals[i+4]}
 		}
-	} else if usr.Goals[9].GoalName != "" {
+	} else if goals[9].GoalName != "" {
 		j := 0
 		for i := 0; i < 5; i++ {
-			WeeklyGoals[days[i]] = []model.Goal{usr.Goals[j], usr.Goals[j+1]}
+			WeeklyGoals[days[i]] = []model.Goal{goals[j], goals[j+1]}
 			j += 2
 		}
-	} else {
-		for day := range days {
-			WeeklyGoals[days[day]] = []model.Goal{usr.Goals[day]}
-		}
 	}
+
 	return &WeeklyGoals
 }
 
@@ -256,10 +258,11 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 
 	for i := 1; i <= 10; i++ {
 		get := fmt.Sprintf("g%d", i)
-		TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form[get][0]})
+		TestUser.Goals = append(TestUser.Goals,
+			model.Goal{GoalName: r.Form[get][0], Priority: i})
 	}
 
-	f := *loadGoalInformation(TestUser)
+	f := *delegateGoals(TestUser.Goals, w, r)
 
 	p := &Page{WeeklyGoals: (f),
 		Days:         days,
@@ -316,14 +319,32 @@ func getWeeklyGoalsFromSession() map[string][]model.Goal {
 	return aval.Get("weekly-goals").(map[string][]model.Goal)
 }
 
-func adjustNumberOfGoalsForTheWeek() {
+func adjustNumberOfGoalsForTheWeek(w http.ResponseWriter, r *http.Request) {
 	temp := getWeeklyGoalsFromSession()
-	firstDayGoals := temp["1.) Monday"]
-	copy(firstDayGoals[0:], firstDayGoals[1:])
-	firstDayGoals[len(firstDayGoals)-1] = model.Goal{}
-	firstDayGoals = firstDayGoals[:len(firstDayGoals)-1]
-	temp["1.) Monday"] = firstDayGoals
-	setWeeklyGoalsInSession(temp)
+	var newArr model.Goals
+
+	for _, v := range temp {
+		for val := range v {
+			newArr = append(newArr, v[val])
+		}
+	}
+
+	fmt.Println()
+
+	for i := len(newArr); i < 10; i++ {
+		newArr = append(newArr, model.Goal{GoalName: "",
+			 											   Priority: 999})
+	}
+
+	sort.Sort(newArr)
+
+	for i := 0; i < len(newArr)-1; i++ {
+		newArr[i] = newArr[i+1]
+	}
+
+	newArr[len(newArr)-1] = model.Goal{GoalName: "",Priority: 999}
+	sort.Sort(newArr)
+	setWeeklyGoalsInSession(*delegateGoals(newArr, w, r))
 }
 
 func calculateRoundPerameters(userInput string) (goals int, breaks int,
@@ -362,10 +383,18 @@ func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Form.Get("goal-complete") == "true" {
-		adjustNumberOfGoalsForTheWeek()
+		adjustNumberOfGoalsForTheWeek(w, r)
 	}
 
-	f := getWeeklyGoalsFromSession()["1.) Monday"][0]
+	var f model.Goal
+
+	if len(getWeeklyGoalsFromSession()["1.) Monday"]) == 0 {
+		f.GoalName = ""
+		renderTemplate(w, "initial_goals", &Page{})
+		return
+	} else {
+		f = getWeeklyGoalsFromSession()["1.) Monday"][0]
+	}
 
 	p := &Page{WeeklyGoals: getWeeklyGoalsFromSession(),
 		Days:         days,

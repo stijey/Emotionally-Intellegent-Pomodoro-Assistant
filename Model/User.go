@@ -9,7 +9,21 @@ type User struct {
 
 type Goal struct {
 	GoalName string
-	Priority int32
+	Priority int
+}
+
+type Goals []Goal
+
+func (slice Goals) Len() int {
+    return len(slice)
+}
+
+func (slice Goals) Less(i, j int) bool {
+    return slice[i].Priority < slice[j].Priority;
+}
+
+func (slice Goals) Swap(i, j int) {
+    slice[i], slice[j] = slice[j], slice[i]
 }
 
 type PomodoroRound struct {

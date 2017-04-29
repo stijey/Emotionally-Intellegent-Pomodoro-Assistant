@@ -3,7 +3,14 @@
 <div class="row-fluid above-goal">
     <div class="col-sm-2"></div>
     <div class="col-sm-8">
-        <p class="goal-text"><strong>Your current major goal is:</strong>{{ .FirstGoal }}</p>
+        <p class="goal-text"><strong>Your current major goal is:</strong>
+            {{ if eq .FirstGoal ""}}
+                Click Submit Feedback again to pick more goals!
+            {{ end }}
+            {{ if ne .FirstGoal ""}}
+                .FirstGoal
+            {{ end }}
+        </p>
     </div>
 </div>
 <div class="buf1"></div>
