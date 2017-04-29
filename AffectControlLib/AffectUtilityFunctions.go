@@ -31,7 +31,7 @@ func MakeAffectiveState() AffectiveState{
 	return a
 }
 
-func (a *AffectiveState) propegateForward(behaviour [3]float64) {
+func (a *AffectiveState) PropegateForward(behaviour [3]float64) {
 	// Re-calculate the values
 	a.TransientImpression = CalculateTransient(a.Actor, behaviour, a.Object)
 	a.Deflection = CalculateDeflection(a.TransientImpression, a.Actor,
@@ -42,7 +42,6 @@ func (a *AffectiveState) propegateForward(behaviour [3]float64) {
 	temp := a.Actor
 	a.Actor = a.Object
 	a.Object = temp
-
 }
 
 func CalculateTransient(actor [3]float64, behaviour [3]float64, object [3]float64) [3]float64 {

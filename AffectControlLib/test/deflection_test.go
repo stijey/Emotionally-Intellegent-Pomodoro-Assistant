@@ -4,15 +4,6 @@ import "github.com/the-friyia/go-affect/AffectControlLib"
 import "testing"
 import "fmt"
 
-// func TestAverage(t *testing.T) {
-//
-//     a := affect.CalculateDeflection([3]float64{2.0, 2.0, 2.0}, [3]float64{1.0, 1.0, 1.0})
-//
-//     if a != 1.0 {
-//         t.Error(a)
-//     }
-// }
-
 func Test_CalculateTransient(t *testing.T) {
 	newFundamental := affect.CalculateTransient([3]float64{1, 1, 1},
 		[3]float64{1, 1, 1},
@@ -36,4 +27,29 @@ func Test_make(t *testing.T) {
 
 func Test_LoadFunction(t *testing.T) {
 	affect.LoadBehaviours()
+}
+
+func Test_simulatedInteraction(t *testing.T) {
+    state := affect.MakeAffectiveState()
+    fmt.Println("#### Simulation start")
+
+    // Actor says something to the client
+    state.PropegateForward(state.Behaviours["implore"])
+    fmt.Println(state.Deflection)
+
+    // Object Speaks
+    state.PropegateForward(state.Behaviours["lecture"])
+    fmt.Println(state.Deflection)
+
+    // Actor says something to the client
+    state.PropegateForward(state.Behaviours["discourage"])
+    fmt.Println(state.Deflection)
+
+    // Object Speaks
+    state.PropegateForward(state.Behaviours["compliment"])
+    fmt.Println(state.Deflection)
+
+    // Actor says something to the client
+    state.PropegateForward(state.Behaviours["counsel"])
+    fmt.Println(state.Deflection)
 }
