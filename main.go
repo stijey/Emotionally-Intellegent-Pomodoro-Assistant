@@ -410,8 +410,8 @@ func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 		Days:         days,
 		FirstGoal:    f.GoalName,
 		NumOfGoals:   array,
-		PomodoroTime: breakTime,
-		Breaktime:    workTime}
+		PomodoroTime: workTime,
+		Breaktime:    breakTime}
 
 	renderTemplate(w, "pomodoro_action_view", p)
 }
