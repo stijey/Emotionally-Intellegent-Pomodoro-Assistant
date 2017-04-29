@@ -6,13 +6,26 @@ import "fmt"
 
 // func TestAverage(t *testing.T) {
 //
-//     a := affect.CalculateDeflection([3]float32{2.0, 2.0, 2.0}, [3]float32{1.0, 1.0, 1.0})
+//     a := affect.CalculateDeflection([3]float64{2.0, 2.0, 2.0}, [3]float64{1.0, 1.0, 1.0})
 //
 //     if a != 1.0 {
 //         t.Error(a)
 //     }
 // }
 
-func Test_calculateActorTransient(t *testing.T) {
-    fmt.Println(affect.CalculateActorTransient([3]float32{-2.0, -3.0, 1.0}))
+func Test_CalculateTransient(t *testing.T) {
+    newFundamental := affect.CalculateTransient([3]float64{1, 1, 1},
+        [3]float64{1, 1, 1},
+        [3]float64{1, 1, 1})
+    fmt.Println(newFundamental)
+}
+
+func Test_DeflectionCalculation(t *testing.T) {
+    d := affect.CalculateDeflection([3]float64{2, 1, 1},
+         [3]float64{1, 3, 1},
+         [3]float64{1, 1, 4},
+         [3]float64{4, 1, 1},
+         [3]float64{3, 1, 1},
+         [3]float64{1, 1, 1})
+    fmt.Println(d)
 }
