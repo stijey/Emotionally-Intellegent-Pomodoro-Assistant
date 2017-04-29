@@ -12,7 +12,6 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 var templates = template.Must(template.ParseFiles(
@@ -255,16 +254,10 @@ func loadGoalInformation(usr *model.User) *map[string][]model.Goal {
 func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g1"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g2"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g3"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g4"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g5"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g6"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g7"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g8"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g9"][0]})
-	TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form["g10"][0]})
+	for i := 1; i <= 10; i++ {
+		get := fmt.Sprintf("g%d", i)
+		TestUser.Goals = append(TestUser.Goals, model.Goal{GoalName: r.Form[get][0]})
+	}
 
 	f := *loadGoalInformation(TestUser)
 
@@ -333,40 +326,10 @@ func adjustNumberOfGoalsForTheWeek() {
 	setWeeklyGoalsInSession(temp)
 }
 
-func userInputToEPA(userInput string) [3]float64 {
-
-	words := strings.Fields(userInput)
-	allKeyWords := affectiveState.Behaviours
-	kw := []string{}
-	for i := range words {
-		for k, _ := range allKeyWords {
-			if words[i] == k {
-				kw = append(kw, words[i])
-				break
-			}
-		}
-	}
-
-	returnVal := [3]float64{0.0, 0.0, 0.0}
-	for word := range kw {
-		returnVal[0] = affectiveState.Behaviours[kw[word]][0]
-		returnVal[1] = affectiveState.Behaviours[kw[word]][1]
-		returnVal[2] = affectiveState.Behaviours[kw[word]][2]
-	}
-
-	totalKeyWords := len(kw)
-
-	returnVal[0] /= float64(totalKeyWords)
-	returnVal[1] /= float64(totalKeyWords)
-	returnVal[2] /= float64(totalKeyWords)
-
-	return returnVal
-}
-
 func calculateRoundPerameters(userInput string) (goals int, breaks int,
 	workTime int) {
 
-	affectiveState.PropegateForward(userInputToEPA(userInput))
+	affectiveState.PropegateForward(affectiveState.UserInputToEPA(userInput))
 
 	if affectiveState.Deflection > 21 {
 		goals = 1

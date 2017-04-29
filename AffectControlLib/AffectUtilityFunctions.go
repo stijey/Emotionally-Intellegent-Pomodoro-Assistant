@@ -163,3 +163,33 @@ func LoadBehaviours() map[string][3]float64 {
 	}
 	return beh
 }
+
+func (a *AffectiveState) UserInputToEPA(userInput string) [3]float64 {
+
+	words := strings.Fields(userInput)
+	allKeyWords := a.Behaviours
+	kw := []string{}
+	for i := range words {
+		for k, _ := range allKeyWords {
+			if words[i] == k {
+				kw = append(kw, words[i])
+				break
+			}
+		}
+	}
+
+	returnVal := [3]float64{0.0, 0.0, 0.0}
+	for word := range kw {
+		returnVal[0] = a.Behaviours[kw[word]][0]
+		returnVal[1] = a.Behaviours[kw[word]][1]
+		returnVal[2] = a.Behaviours[kw[word]][2]
+	}
+
+	totalKeyWords := len(kw)
+
+	returnVal[0] /= float64(totalKeyWords)
+	returnVal[1] /= float64(totalKeyWords)
+	returnVal[2] /= float64(totalKeyWords)
+
+	return returnVal
+}
