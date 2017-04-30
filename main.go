@@ -261,6 +261,10 @@ func delegateGoals(goals []model.Goal, w http.ResponseWriter,
 func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
+	if len(TestUser.Goals) != 0 {
+		TestUser.Goals = []model.Goal{}
+	}
+
 	for i := 1; i <= 10; i++ {
 		get := fmt.Sprintf("g%d", i)
 		TestUser.Goals = append(TestUser.Goals,
@@ -395,7 +399,7 @@ func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 
 	if len(getWeeklyGoalsFromSession()["1.) Monday"]) == 0 {
 		f.GoalName = ""
-		renderTemplate(w, "initial_goals", &Page{})
+		http.Redirect(w, r, "/setnewgoals", 302)
 		return
 	} else {
 		f = getWeeklyGoalsFromSession()["1.) Monday"][0]
@@ -411,12 +415,17 @@ func pomodoroUpdate(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "pomodoro_action_view", p)
 }
 
+func setNewGoalsHandler(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "initial_goals", &Page{})
+}
+
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/createaccount", signupHandler)
 	// http.HandleFunc("/signup", createUser)
 	http.HandleFunc("/signup", prepareUserFormData)
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/setnewgoals", setNewGoalsHandler)
 	http.HandleFunc("/pomodoro", addGoalsToUser)
 	http.HandleFunc("/pomodoro-update", pomodoroUpdate)
 	http.Handle("/assets/", http.StripPrefix("/assets/",
