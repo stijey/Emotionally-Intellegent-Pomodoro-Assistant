@@ -107,7 +107,7 @@ func prepareUserFormData(w http.ResponseWriter, r *http.Request) {
 		p := &Page{Title: "Welcome", Goal: nil}
 		renderTemplate(w, "create_user", p)
 	} else {
-		loginSetGoals(w, r, username)
+		indexHandler(w, r)
 	}
 }
 
@@ -277,7 +277,7 @@ func addGoalsToUser(w http.ResponseWriter, r *http.Request) {
 		Days:         days,
 		FirstGoal:    f["1.) Monday"][0].GoalName,
 		NumOfGoals:   []int{1, 2, 3},
-		PomodoroTime: 10,
+		PomodoroTime: 30,
 		Breaktime:    5}
 
 	TestUser.WeeklyGoals = &f
@@ -422,7 +422,6 @@ func setNewGoalsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/createaccount", signupHandler)
-	// http.HandleFunc("/signup", createUser)
 	http.HandleFunc("/signup", prepareUserFormData)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/setnewgoals", setNewGoalsHandler)
