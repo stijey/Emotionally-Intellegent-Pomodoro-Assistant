@@ -28,7 +28,8 @@ var templates = template.Must(template.ParseFiles(
 	"tmpl/fragments/login_failure.html",
 	"tmpl/fragments/weekly_goals.html",
 	"tmpl/create_user.html",
-	"tmpl/fragments/pomodoro_activity_view.html"))
+	"tmpl/fragments/pomodoro_activity_view.html",
+	"tmpl/about.html"))
 
 var globalSessions *session.Manager
 var TestUser *model.User
@@ -419,6 +420,10 @@ func setNewGoalsHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "initial_goals", &Page{})
 }
 
+func aboutUsHandler(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "about", &Page{})
+}
+
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/createaccount", signupHandler)
@@ -427,6 +432,7 @@ func main() {
 	http.HandleFunc("/setnewgoals", setNewGoalsHandler)
 	http.HandleFunc("/pomodoro", addGoalsToUser)
 	http.HandleFunc("/pomodoro-update", pomodoroUpdate)
+	http.HandleFunc("/about", aboutUsHandler)
 	http.Handle("/assets/", http.StripPrefix("/assets/",
 		http.FileServer(http.Dir("assets"))))
 	http.ListenAndServe(":8080", nil)
