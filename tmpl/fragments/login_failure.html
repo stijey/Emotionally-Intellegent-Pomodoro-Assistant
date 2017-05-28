@@ -1,5 +1,12 @@
 {{ define "login_failure" }}
 
+<div class="row align-items-center">
+    <div style="text-align:center">
+        <h1>Welcome to the Emotionally Intellegent Pomodoro App !</h1>
+        <h3>Do all the things!!!</h3>
+    </div>
+</div>
+
 <form action="/login" method="post">
     <div class="row buffer-title">
         <div class="col-sm-3"></div>
@@ -25,6 +32,12 @@
     </div>
 
     <div class="alert alert-danger buf_1">Incorrect username and/or password</div>
+    <div class="row buffer">
+        <div class="col-sm-4"></div>
+        <div class="col-sm-4 but">
+            <span>Not a member? <a href="/createaccount" class="text-primary">Sign Up Here</a></span>
+        </div>
+    </div>
     <style>
         .buf_1 {
             margin-top: 20px;

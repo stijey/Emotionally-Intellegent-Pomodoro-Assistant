@@ -83,6 +83,10 @@ func init() {
 	the user is granted access
 */
 func authenticateUser(username string, password string) bool {
+	if username == "" {
+		return false
+	}
+
 	dbinfo := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
 		DB_USER, DB_PASSWORD, DB_NAME)
 	db, err := sql.Open("postgres", dbinfo)
@@ -127,16 +131,6 @@ func prepareUserFormData(w http.ResponseWriter, r *http.Request) {
 	} else {
 		indexHandler(w, r)
 	}
-}
-
-/*
-	TODO: This hashing method requires salt
-*/
-func hashPassword(password string) string {
-	h := sha256.New()
-	passwordBytes := []byte(password)
-	passwordHashed := h.Sum(passwordBytes)
-	return string(passwordHashed)
 }
 
 /*
@@ -505,6 +499,22 @@ func main() {
 	http.Handle("/assets/", http.StripPrefix("/assets/",
 		http.FileServer(http.Dir("assets"))))
 	http.ListenAndServe(":8080", nil)
+}
+
+/*
+   ===============================
+	      Incomplete work
+   ===============================
+*/
+
+/*
+	TODO: This hashing function requires salt
+*/
+func hashPassword(password string) string {
+	h := sha256.New()
+	passwordBytes := []byte(password)
+	passwordHashed := h.Sum(passwordBytes)
+	return string(passwordHashed)
 }
 
 /*
